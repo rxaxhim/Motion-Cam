@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Feed</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .recorded-video{
+            max-width: 240px; /* or any desired width */
+        }
+        .live-feed {
+            max-width: 640px; /* or any desired width */
+        }
+    </style>
+</head>
+<body>
+
+<h2>Live Feed:</h2>
+<img class="live-feed" src="{{ url_for('video_feed') }}" alt="Live Feed">
+
+<h2>Recorded Clips:</h2>
+<div>
+    {% for recording in recordings %}
+    <video class="recorded-video" controls>
+        <source src="{{ url_for('serve_recording', filename=recording) }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    {% endfor %}
+</div>
+
+</body>
+</html>
