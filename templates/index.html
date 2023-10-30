@@ -1,33 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Feed</title>
+    <title>MotionCam | Live Feed</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        .recorded-video{
-            max-width: 240px; /* or any desired width */
+        body {
+            background: #f7f9fc; /* A light bluish-grey */
+            font-family: 'Arial', sans-serif;
         }
+
+        h1, h4 {
+            color: #333;  /* Dark grey text */
+        }
+
+        .card {
+            border-radius: 15px;  /* Rounded corners */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);  /* Slight shadow */
+        }
+
+        .card-header {
+            font-weight: bold;
+            font-size: 1.5em;
+        }
+
+        .recorded-video {
+            max-width: 300px;
+            border-radius: 10px;  /* Rounded corners for videos too */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);  /* Slight shadow */
+        }
+
         .live-feed {
-            max-width: 640px; /* or any desired width */
+            width: 100%;
         }
     </style>
 </head>
+
 <body>
+    <div class="container mt-5 mb-5">
+        <h1 class="text-center mb-5">MotionCam</h1>
+        
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">Live Feed</div>
+                    <div class="card-body p-0">
+                        <img class="live-feed" src="{{ url_for('video_feed') }}" alt="Live Feed">
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<h2>Live Feed:</h2>
-<img class="live-feed" src="{{ url_for('video_feed') }}" alt="Live Feed">
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-4">Recorded Clips:</h4>
+                <div class="d-flex flex-wrap justify-content-start">
+                    {% for recording in recordings %}
+                    <div class="mr-4 mb-4">
+                        <video class="recorded-video" controls>
+                            <source src="{{ url_for('serve_recording', filename=recording) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 
-<h2>Recorded Clips:</h2>
-<div>
-    {% for recording in recordings %}
-    <video class="recorded-video" controls>
-        <source src="{{ url_for('serve_recording', filename=recording) }}" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-    {% endfor %}
-</div>
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
+
 </html>
