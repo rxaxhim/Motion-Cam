@@ -1,0 +1,12 @@
+blinker
+click
+flask
+itsdangerous
+jinja2
+markupsafe
+numpy
+opencv-python
+pip
+pygame
+setuptools
+werkzeug
