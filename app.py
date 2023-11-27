@@ -3,6 +3,8 @@ import cv2
 import os
 from datetime import datetime
 import pygame
+from ultralytics import YOLO
+from PIL import Image
 
 app = Flask(__name__)
 camera = cv2.VideoCapture(0)
@@ -13,6 +15,9 @@ recording = False
 video_writer = None
 alert_duration = 10  # Duration (in seconds) to record after detecting motion
 frames_recorded = 0
+
+classifier_model = YOLO("yolov8n.pt")
+
 
 def generate_frames():
     global prev_frame, recording, video_writer, frames_recorded
@@ -38,26 +43,41 @@ def generate_frames():
         for contour in contours:
             if cv2.contourArea(contour) < 500:
                 continue
-            (x, y, w, h) = cv2.boundingRect(contour)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # (x, y, w, h) = cv2.boundingRect(contour)
+            # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             motion_detected = True
 
         # By default, show "Status: No Motion"
         cv2.putText(frame, "Status: No Motion", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
 
         if motion_detected:
-            # Clear the previous "No Motion" status and show "Motion Detected"
-            cv2.rectangle(frame, (0, 0), (frame.shape[1], 40), (0,0,0), -1)
+            # # Clear the previous "No Motion" status and show "Motion Detected"
+            # cv2.rectangle(frame, (0, 0), (frame.shape[1], 40), (0,0,0), -1)
             cv2.putText(frame, "Status: Motion Detected", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-            
-            # Start recording if not already doing so
-            if not recording:
-                filename = os.path.join("motion_clips", f"motion_{timestamp.replace(' ', '_').replace(':', '-')}.mp4")
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                video_writer = cv2.VideoWriter(filename, fourcc, 20.0, (frame.shape[1], frame.shape[0]))
-                recording = True
-                pygame.mixer.music.load('beep.wav')
-                pygame.mixer.music.play()
+        
+        # Object Classification
+        # pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+        results = classifier_model(frame)
+        for r in results:
+            for i, box in enumerate(r.boxes.xyxy):
+                x1, y1, x2, y2 = map(int, box[:4])
+                conf = r.boxes.conf[i]
+                if conf > 0.5:
+                    cls_id = int(r.boxes.cls[i])
+                    label = classifier_model.names[cls_id]
+                    cv2.putText(frame, f'{label} {conf:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
+        # Start recording if not already doing so
+        if not recording:
+            filename = os.path.join("motion_clips", f"motion_{timestamp.replace(' ', '_').replace(':', '-')}.mp4")
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            video_writer = cv2.VideoWriter(filename, fourcc, 20.0, (frame.shape[1], frame.shape[0]))
+            recording = True
+            pygame.mixer.music.load('beep.wav')
+            pygame.mixer.music.play()
+
 
         # Save the frame if recording
         if recording:
