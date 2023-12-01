@@ -54,7 +54,11 @@
             </div>
         </div>
 
-        <div class="row">
+        <!-- Toggle Button for Recorded Clips -->
+        <button id="toggleButton" class="btn btn-info mb-3">Hide Recorded Clips</button>
+
+        <!-- Recorded Clips Section -->
+        <div class="row" id="recordedClipsSection">
             <div class="col-12">
                 <h4 class="mb-4">Recorded Clips:</h4>
                 <div class="d-flex flex-wrap justify-content-start">
@@ -73,6 +77,31 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('toggleButton');
+            const recordedClipsSection = document.getElementById('recordedClipsSection');
+    
+            // Check if the 'hideClips' flag is set in local storage
+            if (localStorage.getItem('hideClips') === 'true') {
+                recordedClipsSection.style.display = 'none';
+                toggleButton.textContent = 'Show Recorded Clips';
+            }
+    
+            toggleButton.addEventListener('click', function() {
+                // Toggle the state in local storage
+                if (localStorage.getItem('hideClips') === 'true') {
+                    localStorage.setItem('hideClips', 'false');
+                } else {
+                    localStorage.setItem('hideClips', 'true');
+                }
+    
+                // Refresh the page to reflect the change
+                window.location.reload();
+            });
+        });
+    </script>
+    
 </body>
 
 </html>

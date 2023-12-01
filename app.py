@@ -21,6 +21,9 @@ classifier_model = YOLO("yolov8n.pt")
 
 def generate_frames():
     global prev_frame, recording, video_writer, frames_recorded
+    motion_frame_count = 0  # Count of consecutive frames with motion
+    frames_after_motion = 200  # Number of frames to record after motion is detected (10 seconds at 20 FPS)
+
     while True:
         ret, frame = camera.read()
         
@@ -31,7 +34,7 @@ def generate_frames():
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
         if prev_frame is None:
-            prev_frame = gray
+            prev_frame = gray.copy()
             continue
 
         frame_diff = cv2.absdiff(prev_frame, gray)
@@ -43,21 +46,9 @@ def generate_frames():
         for contour in contours:
             if cv2.contourArea(contour) < 500:
                 continue
-            # (x, y, w, h) = cv2.boundingRect(contour)
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             motion_detected = True
 
-        # By default, show "Status: No Motion"
-        cv2.putText(frame, "Status: No Motion", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
-
-        if motion_detected:
-            # # Clear the previous "No Motion" status and show "Motion Detected"
-            # cv2.rectangle(frame, (0, 0), (frame.shape[1], 40), (0,0,0), -1)
-            cv2.putText(frame, "Status: Motion Detected", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-        
-        # Object Classification
-        # pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
+        # YOLO Object Detection
         results = classifier_model(frame)
         for r in results:
             for i, box in enumerate(r.boxes.xyxy):
@@ -69,23 +60,30 @@ def generate_frames():
                     cv2.putText(frame, f'{label} {conf:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-        # Start recording if not already doing so
-        if not recording:
+        if motion_detected:
+            motion_frame_count = frames_after_motion
+            cv2.putText(frame, "Status: Motion Detected", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+        else:
+            cv2.putText(frame, "Status: No Motion", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
+
+        if motion_frame_count > 0 and not recording:
+            # Start recording
+            recording = True
             filename = os.path.join("motion_clips", f"motion_{timestamp.replace(' ', '_').replace(':', '-')}.mp4")
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             video_writer = cv2.VideoWriter(filename, fourcc, 20.0, (frame.shape[1], frame.shape[0]))
-            recording = True
             pygame.mixer.music.load('beep.wav')
             pygame.mixer.music.play()
+            cv2.putText(frame, "Status: Motion Detected", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
 
-
-        # Save the frame if recording
         if recording:
             video_writer.write(frame)
-            frames_recorded += 1
-            if frames_recorded >= alert_duration * 20:  # Assuming 20 FPS
-                video_writer.release()
+            motion_frame_count -= 1  # Decrement the counter
+
+            if motion_frame_count <= 0:
+                # Stop recording
                 recording = False
+                video_writer.release()
                 frames_recorded = 0
 
         prev_frame = gray
