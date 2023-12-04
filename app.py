@@ -70,7 +70,7 @@ def generate_frames():
             # Start recording
             recording = True
             filename = os.path.join("motion_clips", f"motion_{timestamp.replace(' ', '_').replace(':', '-')}.mp4")
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fourcc = cv2.VideoWriter_fourcc(*'X264')
             video_writer = cv2.VideoWriter(filename, fourcc, 20.0, (frame.shape[1], frame.shape[0]))
             pygame.mixer.music.load('beep.wav')
             pygame.mixer.music.play()
